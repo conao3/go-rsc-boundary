@@ -21,3 +21,4 @@ go.work
 rsc-boundary
 dist/
 build/
+result
