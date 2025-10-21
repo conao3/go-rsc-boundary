@@ -12,14 +12,12 @@ import (
 	"strings"
 )
 
-// Config holds the configuration for the boundary scanner
 type Config struct {
 	Directives       []string
 	SearchExtensions []string
 	MaxReadBytes     int64
 }
 
-// DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	return &Config{
 		Directives:       []string{"'use client'", `"use client"`},
@@ -28,19 +26,16 @@ func DefaultConfig() *Config {
 	}
 }
 
-// ImportInfo represents a parsed import statement
 type ImportInfo struct {
 	Source     string
 	Specifiers []string
 }
 
-// PathAlias represents a path alias mapping
 type PathAlias struct {
 	Alias  string
 	Target string
 }
 
-// TSConfig represents a subset of tsconfig.json/jsconfig.json
 type TSConfig struct {
 	CompilerOptions struct {
 		BaseURL string              `json:"baseUrl"`
@@ -50,7 +45,6 @@ type TSConfig struct {
 }
 
 var (
-	// Regular expressions for parsing
 	importRegex = regexp.MustCompile(`^\s*import\s+(.+?)(?:\s+from\s+)?['"]([^'"]+)['"]`)
 	jsxTagRegex = regexp.MustCompile(`<\s*(\w+)`)
 )
@@ -77,7 +71,6 @@ func scanPath(root string, config *Config, verbose bool) error {
 		}
 
 		if info.IsDir() {
-			// Skip node_modules, .git, etc.
 			name := info.Name()
 			if name == "node_modules" || name == ".git" || name == "dist" || name == "build" {
 				return filepath.SkipDir
@@ -85,7 +78,6 @@ func scanPath(root string, config *Config, verbose bool) error {
 			return nil
 		}
 
-		// Only process supported file extensions
 		if !isSupportedFile(path, config.SearchExtensions) {
 			return nil
 		}
@@ -117,7 +109,6 @@ func scanFile(filePath string, config *Config, verbose bool) error {
 	}
 	defer file.Close()
 
-	// Read file content
 	content, err := io.ReadAll(file)
 	if err != nil {
 		return err
@@ -125,24 +116,20 @@ func scanFile(filePath string, config *Config, verbose bool) error {
 
 	lines := strings.Split(string(content), "\n")
 
-	// Parse imports
 	imports := parseImports(lines)
 	if len(imports) == 0 {
 		return nil
 	}
 
-	// Resolve aliases
 	baseDir := filepath.Dir(filePath)
 	aliases, err := loadPathAliases(baseDir)
 	if err != nil && verbose {
 		fmt.Fprintf(os.Stderr, "Warning: failed to load aliases for %s: %v\n", filePath, err)
 	}
 
-	// Collect client components
 	clientComponents := make(map[string]bool)
 
 	for _, imp := range imports {
-		// Resolve import path
 		resolvedPaths := resolveImportPath(baseDir, imp.Source, aliases, config)
 
 		for _, resolvedPath := range resolvedPaths {
@@ -159,11 +146,9 @@ func scanFile(filePath string, config *Config, verbose bool) error {
 		return nil
 	}
 
-	// Find JSX usages and output in grep format
 	for lineNum, line := range lines {
 		for component := range clientComponents {
 			if containsJSXTag(line, component) {
-				// Output in grep format: filename:line:content
 				fmt.Printf("%s:%d:%s\n", filePath, lineNum+1, line)
 				break
 			}
@@ -187,7 +172,6 @@ func parseImports(lines []string) []ImportInfo {
 		}
 
 		if currentImport != "" {
-			// Check if import statement is complete
 			if strings.Contains(currentImport, `"`) || strings.Contains(currentImport, `'`) {
 				if imp := parseImportStatement(currentImport); imp != nil {
 					imports = append(imports, *imp)
@@ -201,12 +185,10 @@ func parseImports(lines []string) []ImportInfo {
 }
 
 func parseImportStatement(stmt string) *ImportInfo {
-	// Skip type-only imports
 	if regexp.MustCompile(`^\s*import\s+type\s`).MatchString(stmt) {
 		return nil
 	}
 
-	// Extract source path
 	sourceMatch := regexp.MustCompile(`from\s+['"]([^'"]+)['"]|import\s+['"]([^'"]+)['"]`).FindStringSubmatch(stmt)
 	if sourceMatch == nil {
 		return nil
@@ -221,13 +203,10 @@ func parseImportStatement(stmt string) *ImportInfo {
 		return nil
 	}
 
-	// Extract specifiers
 	var specifiers []string
 
-	// Remove "from ..." part
 	clause := regexp.MustCompile(`^\s*import\s+(.*?)\s+from\s+`).FindStringSubmatch(stmt)
 	if clause == nil || len(clause) < 2 {
-		// Side-effect import only
 		return &ImportInfo{Source: source, Specifiers: specifiers}
 	}
 
@@ -239,26 +218,21 @@ func parseImportStatement(stmt string) *ImportInfo {
 		return &ImportInfo{Source: source, Specifiers: specifiers}
 	}
 
-	// Handle default + named: import Default, { Named } from '...'
 	if match := regexp.MustCompile(`^([\w$]+)\s*,\s*\{(.*)\}$`).FindStringSubmatch(clauseText); match != nil {
 		specifiers = append(specifiers, strings.TrimSpace(match[1]))
 		specifiers = append(specifiers, parseNamedSpecifiers(match[2])...)
 		return &ImportInfo{Source: source, Specifiers: specifiers}
 	}
 
-	// Handle named only: import { Named } from '...'
 	if match := regexp.MustCompile(`^\{(.*)\}$`).FindStringSubmatch(clauseText); match != nil {
 		specifiers = append(specifiers, parseNamedSpecifiers(match[1])...)
 		return &ImportInfo{Source: source, Specifiers: specifiers}
 	}
 
-	// Handle namespace: import * as Name from '...'
 	if regexp.MustCompile(`^\*\s+as\s+[\w$]+$`).MatchString(clauseText) {
-		// Namespace imports don't export individual components
 		return &ImportInfo{Source: source, Specifiers: specifiers}
 	}
 
-	// Default import
 	specifiers = append(specifiers, clauseText)
 
 	return &ImportInfo{Source: source, Specifiers: specifiers}
@@ -273,7 +247,6 @@ func parseNamedSpecifiers(body string) []string {
 			continue
 		}
 
-		// Handle "Name as Alias"
 		if match := regexp.MustCompile(`^.*\s+as\s+([\w$]+)$`).FindStringSubmatch(trimmed); match != nil {
 			specifiers = append(specifiers, match[1])
 		} else {
@@ -287,14 +260,12 @@ func parseNamedSpecifiers(body string) []string {
 func resolveImportPath(baseDir, importPath string, aliases []PathAlias, config *Config) []string {
 	var candidates []string
 
-	// Handle relative imports
 	if strings.HasPrefix(importPath, ".") {
 		basePath := filepath.Join(baseDir, importPath)
 		candidates = append(candidates, expandPath(basePath, config)...)
 		return candidates
 	}
 
-	// Handle aliased imports
 	for _, alias := range aliases {
 		if strings.HasPrefix(importPath, alias.Alias) {
 			remainder := strings.TrimPrefix(importPath, alias.Alias)
@@ -311,13 +282,11 @@ func resolveImportPath(baseDir, importPath string, aliases []PathAlias, config *
 func expandPath(basePath string, config *Config) []string {
 	var paths []string
 
-	// Check if file exists as-is
 	if fileExists(basePath) {
 		paths = append(paths, basePath)
 		return paths
 	}
 
-	// Try with extensions
 	for _, ext := range config.SearchExtensions {
 		pathWithExt := basePath + ext
 		if fileExists(pathWithExt) {
@@ -325,7 +294,6 @@ func expandPath(basePath string, config *Config) []string {
 		}
 	}
 
-	// Try index files if path is a directory
 	if info, err := os.Stat(basePath); err == nil && info.IsDir() {
 		for _, ext := range config.SearchExtensions {
 			indexPath := filepath.Join(basePath, "index"+ext)
@@ -350,7 +318,6 @@ func fileHasDirective(filePath string, config *Config) bool {
 	}
 	defer file.Close()
 
-	// Read only the beginning of the file
 	limitedReader := io.LimitReader(file, config.MaxReadBytes)
 	scanner := bufio.NewScanner(limitedReader)
 
@@ -370,7 +337,6 @@ func fileHasDirective(filePath string, config *Config) bool {
 			continue
 		}
 
-		// Check for directive
 		for _, directive := range config.Directives {
 			trimmedLine := strings.TrimSuffix(line, ";")
 			if trimmedLine == directive {
@@ -378,7 +344,6 @@ func fileHasDirective(filePath string, config *Config) bool {
 			}
 		}
 
-		// Skip comments
 		if strings.HasPrefix(line, "//") {
 			continue
 		}
@@ -390,7 +355,6 @@ func fileHasDirective(filePath string, config *Config) bool {
 			continue
 		}
 
-		// If we hit non-comment, non-directive code, stop
 		if !strings.HasPrefix(line, "//") && !strings.HasPrefix(line, "/*") {
 			break
 		}
@@ -400,21 +364,18 @@ func fileHasDirective(filePath string, config *Config) bool {
 }
 
 func containsJSXTag(line, componentName string) bool {
-	// Look for <ComponentName
 	pattern := `<\s*` + regexp.QuoteMeta(componentName) + `\b`
 	matched, _ := regexp.MatchString(pattern, line)
 	return matched
 }
 
 func loadPathAliases(baseDir string) ([]PathAlias, error) {
-	// Look for tsconfig.json or jsconfig.json
 	configPaths := []string{
 		"tsconfig.json",
 		"jsconfig.json",
 		"tsconfig.base.json",
 	}
 
-	// Search upwards for config file
 	currentDir := baseDir
 	for {
 		for _, configFile := range configPaths {
@@ -463,17 +424,14 @@ func parseAliases(configPath string) ([]PathAlias, error) {
 			continue
 		}
 
-		// Normalize alias pattern
 		alias := strings.TrimSuffix(aliasPattern, "/*")
 		alias = strings.TrimSuffix(alias, "*")
 
-		// Normalize target
 		target := targets[0]
 		target = strings.TrimSuffix(target, "/*")
 		target = strings.TrimSuffix(target, "*")
 		target = strings.TrimPrefix(target, "./")
 
-		// Resolve target path
 		var targetPath string
 		if filepath.IsAbs(target) {
 			targetPath = target
