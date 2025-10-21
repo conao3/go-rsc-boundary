@@ -13,3 +13,7 @@ test:
 .PHONY: clean
 clean:
 	rm -f rsc-boundary
+
+.PHONY: fmt
+fmt:
+	nix fmt
