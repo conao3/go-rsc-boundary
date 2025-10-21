@@ -1,6 +1,6 @@
 .PHONY: build
 build:
-	go build -o rsc-boundary
+	go build
 
 .PHONY: install
 install:
@@ -8,11 +8,11 @@ install:
 
 .PHONY: test
 test:
-	@./rsc-boundary -path testdata
+	@./go-rsc-boundary -path testdata
 
 .PHONY: clean
 clean:
-	rm -f rsc-boundary
+	rm -f go-rsc-boundary
 
 .PHONY: fmt
 fmt:

@@ -24,7 +24,7 @@ Or build from source:
 ```bash
 git clone https://github.com/conao3/go-rsc-boundary.git
 cd go-rsc-boundary
-go build -o rsc-boundary
+go build
 ```
 
 ## Usage
@@ -32,19 +32,19 @@ go build -o rsc-boundary
 Scan current directory:
 
 ```bash
-rsc-boundary
+go-rsc-boundary
 ```
 
 Scan specific path:
 
 ```bash
-rsc-boundary -path ./src
+go-rsc-boundary -path ./src
 ```
 
 Verbose output:
 
 ```bash
-rsc-boundary -v
+go-rsc-boundary -v
 ```
 
 ## Output Format
@@ -84,7 +84,7 @@ export default function Page() {
 }
 ```
 
-Running `rsc-boundary` will output:
+Running `go-rsc-boundary` will output:
 
 ```
 app/page.tsx:6:      <Button />
