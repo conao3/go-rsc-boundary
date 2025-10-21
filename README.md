@@ -27,6 +27,12 @@ cd go-rsc-boundary
 go build
 ```
 
+Or try without installing (requires Nix):
+
+```bash
+nix shell github:conao3/go-rsc-boundary
+```
+
 ## Usage
 
 Scan current directory:
