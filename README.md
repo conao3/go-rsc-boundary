@@ -16,14 +16,14 @@ Inspired by [boundary.nvim](https://github.com/Kenzo-Wada/boundary.nvim).
 ## Installation
 
 ```bash
-go install github.com/Kenzo-Wada/rsc-boundary@latest
+go install github.com/conao3/go-rsc-boundary@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/Kenzo-Wada/rsc-boundary.git
-cd rsc-boundary
+git clone https://github.com/conao3/go-rsc-boundary.git
+cd go-rsc-boundary
 go build -o rsc-boundary
 ```
 
