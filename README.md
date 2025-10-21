@@ -1,4 +1,4 @@
-# rsc-boundary
+# go-rsc-boundary
 
 A command-line tool to detect and report React Server Components (RSC) `'use client'` boundary violations in grep format.
 

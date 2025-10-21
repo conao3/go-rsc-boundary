@@ -1,5 +1,5 @@
 {
-  description = "rsc-boundary - detect React Server Components 'use client' boundaries";
+  description = "go-rsc-boundary - detect React Server Components 'use client' boundaries";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -35,7 +35,7 @@
         };
 
         packages.default = pkgs.buildGoModule {
-          pname = "rsc-boundary";
+          pname = "go-rsc-boundary";
           version = "0.1.0";
           src = ./.;
           vendorHash = null;
