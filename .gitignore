@@ -21,7 +21,4 @@ go.work
 rsc-boundary
 dist/
 build/
-
-# Nix
 result
-.direnv
