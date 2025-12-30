@@ -1,25 +1,31 @@
 # go-rsc-boundary
 
-A command-line tool to detect and report React Server Components (RSC) `'use client'` boundary violations in grep format.
+A command-line tool that detects React Server Components (RSC) boundary violations and reports them in grep-compatible format.
 
 Inspired by [boundary.nvim](https://github.com/Kenzo-Wada/boundary.nvim).
 
+## Overview
+
+When building applications with React Server Components, mixing server and client code can lead to subtle bugs. This tool scans your codebase to find where client components (those with `'use client'`) are being used, outputting results in a format that integrates seamlessly with editors and CI pipelines.
+
 ## Features
 
-- Detects components that declare `'use client'`
+- Detects `'use client'` directive declarations
 - Finds JSX usages of client components
-- Outputs in grep format (`filename:line:content`)
-- Handles default / named / aliased imports
-- Resolves directory imports to `index` files
-- Supports path aliases from `tsconfig.json` / `jsconfig.json`
+- Outputs grep-compatible format (`filename:line:content`)
+- Handles default, named, and aliased imports
+- Resolves directory imports to index files
+- Supports path aliases from tsconfig.json and jsconfig.json
 
 ## Installation
+
+Install with Go:
 
 ```bash
 go install github.com/conao3/go-rsc-boundary@latest
 ```
 
-Or build from source:
+Build from source:
 
 ```bash
 git clone https://github.com/conao3/go-rsc-boundary.git
@@ -27,7 +33,7 @@ cd go-rsc-boundary
 go build
 ```
 
-Or try without installing (requires Nix):
+Try it without installing (requires Nix):
 
 ```bash
 nix shell github:conao3/go-rsc-boundary
@@ -35,19 +41,19 @@ nix shell github:conao3/go-rsc-boundary
 
 ## Usage
 
-Scan current directory:
+Scan the current directory:
 
 ```bash
 go-rsc-boundary
 ```
 
-Scan specific path:
+Scan a specific path:
 
 ```bash
 go-rsc-boundary -path ./src
 ```
 
-Verbose output:
+Enable verbose output:
 
 ```bash
 go-rsc-boundary -v
@@ -55,21 +61,19 @@ go-rsc-boundary -v
 
 ## Output Format
 
-The tool outputs in grep format, compatible with most editors and tools:
+Results are printed in grep format for easy integration with editors and tools:
 
 ```
 path/to/file.tsx:15:      <Button />
 path/to/file.tsx:20:      <Widget />
 ```
 
-Format: `filename:line:content`
-
 ## Example
 
-Given the following files:
+Given a client component:
 
-**components/Button.tsx**:
 ```tsx
+// components/Button.tsx
 "use client"
 
 export default function Button() {
@@ -77,8 +81,10 @@ export default function Button() {
 }
 ```
 
-**app/page.tsx**:
+And a page that uses it:
+
 ```tsx
+// app/page.tsx
 import Button from '../components/Button';
 
 export default function Page() {
@@ -90,29 +96,21 @@ export default function Page() {
 }
 ```
 
-Running `go-rsc-boundary` will output:
+Running `go-rsc-boundary` outputs:
 
 ```
 app/page.tsx:6:      <Button />
 ```
 
-## Configuration
-
-The tool uses sensible defaults:
-
-- **Directives**: `'use client'`, `"use client"`
-- **Extensions**: `.tsx`, `.ts`, `.jsx`, `.js`
-- **Max Read Bytes**: 4096 (for directive detection)
-
 ## Path Aliases
 
-The tool automatically detects and resolves path aliases from:
+The tool automatically reads path aliases from your project configuration:
 
-- `tsconfig.json`
-- `jsconfig.json`
-- `tsconfig.base.json`
+- tsconfig.json
+- jsconfig.json
+- tsconfig.base.json
 
-Example `tsconfig.json`:
+Example configuration:
 
 ```json
 {
@@ -126,14 +124,22 @@ Example `tsconfig.json`:
 }
 ```
 
+## Configuration Defaults
+
+| Setting | Default Value |
+|---------|---------------|
+| Directives | `'use client'`, `"use client"` |
+| Extensions | .tsx, .ts, .jsx, .js |
+| Max Read Bytes | 4096 |
+
 ## Skipped Directories
 
-The following directories are automatically skipped:
+The following directories are automatically ignored during scans:
 
-- `node_modules`
-- `.git`
-- `dist`
-- `build`
+- node_modules
+- .git
+- dist
+- build
 
 ## License
 
